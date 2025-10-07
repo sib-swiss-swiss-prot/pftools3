@@ -267,13 +267,14 @@ C      Write(CPAR,'(''LENGTH='',I6,'';'')') LPRF
             ! if (|value| <= 10 and |value| > 1e-4) or value == 0.0 (exact)
             ! => write fixed-point: width 10, 7 decimals
             ! else
-            ! => write Fortran list-directed formatting (often scientific)
+            ! => write explicit format and 14 ≤ 16 → safe
             If(ABS(RNOP(I2,I1)).LE.10.0
      *         .AND.ABS(RNOP(I2,I1)).GT.0.0001
      *         .OR.RNOP(I2,I1).EQ.0.0) then
                Write(CHRP(I2),'(F10.7)') RNOP(I2,I1)
-            Else 
-               Write(CHRP(I2),*) RNOP(I2,I1)
+            Else
+               ! was: Write(CHRP(I2),*) RNOP(I2,I1)
+               Write(CHRP(I2),'(1PE14.6)') RNOP(I2,I1)
             End if
             ! Append "R<I2>=<formatted>; " into CPAR, starting at JP+1 (next free spot)
             Write(CPAR(JP+1:),*)'R',I2,'=',CHRP(I2),'; '
