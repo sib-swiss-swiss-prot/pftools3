@@ -255,10 +255,19 @@ C      Write(CPAR,'(''LENGTH='',I6,'';'')') LPRF
          JB=JB+JP+1
 
 * - paramaters
-         
+
+         ! KNOP = number of RNOP values we need to process for this I1
          KNOP=JNOP(MNOR(I1))
-         JP=0
+         ! JP = offset into CPAR (index where the next append begins)
+         JP=0 
+         ! loop over parameter index I2 = 1..KNOP
          Do  22 I2=1,KNOP
+            ! Choose how to format RNOP(I2,I1) into CHRP(I2)
+            ! Note: in Fortran .AND. has higher precedence than .OR.
+            ! if (|value| <= 10 and |value| > 1e-4) or value == 0.0 (exact)
+            ! => write fixed-point: width 10, 7 decimals
+            ! else
+            ! => write Fortran list-directed formatting (often scientific)
             If(ABS(RNOP(I2,I1)).LE.10.0
      *         .AND.ABS(RNOP(I2,I1)).GT.0.0001
      *         .OR.RNOP(I2,I1).EQ.0.0) then
@@ -266,12 +275,18 @@ C      Write(CPAR,'(''LENGTH='',I6,'';'')') LPRF
             Else 
                Write(CHRP(I2),*) RNOP(I2,I1)
             End if
+            ! Append "R<I2>=<formatted>; " into CPAR, starting at JP+1 (next free spot)
             Write(CPAR(JP+1:),*)'R',I2,'=',CHRP(I2),'; '
+            ! Recompute JP as position after the last non-blank in CPAR
             JP=Lblnk(CPAR)+1
  22      Continue
+         ! Post-process CPAR with function slpar, given its length JP
          Call slpar(CPAR,JP)
+         ! Ensure there is space in CBLK (buffer overflow check) before copying CPAR into it
          If(JB+JP+1.GT.LBUF) Go to 900
+         ! Copy CPAR(1:JP) into CBLK, starting at CBLK(JB+2)
          CBLK(JB+2:JB+JP+1)=CPAR(1:JP)
+         ! Advance buffer pointer JB by the number of characters just appended (JP)
          JB=JB+JP
 
 * - text
